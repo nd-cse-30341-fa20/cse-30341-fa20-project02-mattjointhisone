@@ -5,8 +5,8 @@ This is [Project 02] of [CSE.30341.FA20].
 
 ## Students
 
-1. Domer McDomerson (dmcdomer@nd.edu)
-2. Belle Fleur (bfleur@nd.edu)
+1. Matt Tressler (mtressle@nd.edu)
+2. Josh Bottelberghe (jbottelb@nd.edu)
 
 ## Brainstorming
 
