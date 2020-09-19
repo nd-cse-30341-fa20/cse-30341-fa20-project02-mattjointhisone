@@ -3,27 +3,33 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+#include "thread.h"
+#include <semaphore.h>
+
 #include "mq/request.h"
 #include "mq/thread.h"
 
 /* Structures */
 
 typedef struct Queue Queue;
-struct Queue {
+struct Queue
+{
     Request *head;
     Request *tail;
-    size_t   size;
+    size_t size;
 
     /* TODO: Add any necessary thread and synchronization primitives */
+    sem_t lock;
+    sem_t produced;
 };
 
 /* Functions */
 
-Queue *	    queue_create();
-void        queue_delete(Queue *q);
+Queue *queue_create();
+void queue_delete(Queue *q);
 
-void	    queue_push(Queue *q, Request *r);
-Request *   queue_pop(Queue *q);
+void queue_push(Queue *q, Request *r);
+Request *queue_pop(Queue *q);
 
 #endif
 
