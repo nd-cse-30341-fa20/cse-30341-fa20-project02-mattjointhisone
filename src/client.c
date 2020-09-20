@@ -45,7 +45,6 @@ MessageQueue *mq_create(const char *name, const char *host, const char *port)
 
         mq->outgoing = queue_create();
         mq->incoming = queue_create();
-
     }
 
     return mq;
@@ -95,7 +94,10 @@ char *mq_retrieve(MessageQueue *mq)
  **/
 void mq_subscribe(MessageQueue *mq, const char *topic)
 {
+    char uri[1050];
+    sprintf(uri, "/subscription/%s/%s", mq->name, topic);
 
+    queue_push(mq->outgoing, request_create("PUT", uri, NULL));
 }
 
 /**
@@ -105,6 +107,10 @@ void mq_subscribe(MessageQueue *mq, const char *topic)
  **/
 void mq_unsubscribe(MessageQueue *mq, const char *topic)
 {
+    char uri[1050];
+    sprintf(uri, "/subscription/%s/%s", mq->name, topic);
+
+    queue_push(mq->outgoing, request_create("DELETE", uri, NULL));
 }
 
 /**
@@ -135,8 +141,8 @@ void mq_stop(MessageQueue *mq)
 
     size_t status;
 
-    thread_join(mq->pusher, (void**)&status);
-    thread_join(mq->puller, (void**)&status);
+    thread_join(mq->pusher, (void **)&status);
+    thread_join(mq->puller, (void **)&status);
 }
 
 /**
