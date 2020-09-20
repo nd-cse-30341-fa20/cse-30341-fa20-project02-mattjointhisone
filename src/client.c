@@ -4,6 +4,7 @@
 #include "mq/logging.h"
 #include "mq/socket.h"
 #include "mq/string.h"
+#include "mq/thread.h"
 
 /* Internal Constants */
 
@@ -44,6 +45,7 @@ MessageQueue *mq_create(const char *name, const char *host, const char *port)
 
         mq->outgoing = queue_create();
         mq->incoming = queue_create();
+
     }
 
     return mq;
@@ -71,6 +73,8 @@ void mq_delete(MessageQueue *mq)
  */
 void mq_publish(MessageQueue *mq, const char *topic, const char *body)
 {
+    Request *r = request_create("PUT", topic, body);
+    queue_push(mq->outgoing, r);
 }
 
 /**
@@ -80,7 +84,8 @@ void mq_publish(MessageQueue *mq, const char *topic, const char *body)
  */
 char *mq_retrieve(MessageQueue *mq)
 {
-    return NULL;
+    Request *r = queue_pop(mq->incoming);
+    return r->body;
 }
 
 /**
@@ -90,6 +95,7 @@ char *mq_retrieve(MessageQueue *mq)
  **/
 void mq_subscribe(MessageQueue *mq, const char *topic)
 {
+
 }
 
 /**
@@ -109,6 +115,11 @@ void mq_unsubscribe(MessageQueue *mq, const char *topic)
  */
 void mq_start(MessageQueue *mq)
 {
+    // BUI said do this, idk if it should be here
+    mq_subscribe(mq, SENTINEL);
+
+    thread_create(&mq->pusher, NULL, mq_pusher, mq);
+    thread_create(&mq->puller, NULL, mq_puller, mq);
 }
 
 /**
@@ -118,6 +129,14 @@ void mq_start(MessageQueue *mq)
  */
 void mq_stop(MessageQueue *mq)
 {
+    mq->shutdown = true;
+    // publish to the SENTINEL
+    // join threads
+
+    size_t status;
+
+    thread_join(mq->pusher, (void**)&status);
+    thread_join(mq->puller, (void**)&status);
 }
 
 /**
@@ -126,7 +145,7 @@ void mq_stop(MessageQueue *mq)
  */
 bool mq_shutdown(MessageQueue *mq)
 {
-    return false;
+    return mq->shutdown;
 }
 
 /* Internal Functions */
