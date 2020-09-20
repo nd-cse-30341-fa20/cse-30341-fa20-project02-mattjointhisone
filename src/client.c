@@ -158,21 +158,68 @@ bool mq_shutdown(MessageQueue *mq)
 
 /**
  * Pusher thread takes messages from outgoing queue and sends them to server.
+*  1. First thread should continuously send requests from outgoing queue.
  * @param   arg     Message Queue structure.
  **/
 void *mq_pusher(void *arg)
 {
-    return NULL;
+    MessageQueue *mq = (MessageQueue *) arg;
+    Request      *r;
+    FILE         *fs;
+
+    while (!mq_shutdown(mq))
+    {
+      r = queue_pop(mq->outgoing);
+      fs = socket_connect(mq->host, mq->port);
+      request_write(r, fs);
+      // READ RESPONSE UNTIL EOF
+      //while (fgets() != EOF);
+    }
 }
 
 /**
  * Puller thread requests new messages from server and then puts them in
  * incoming queue.
+ *  2. Second thread should continuously receive reqeusts to incoming queue.
  * @param   arg     Message Queue structure.
  **/
 void *mq_puller(void *arg)
 {
-    return NULL;
+  MessageQueue *mq = (MessageQueue *) arg;
+  Request      *r;
+  FILE         *fs;
+  size_t length;
+
+  char buf[BUFSIZ];
+
+
+  while (!mq_shutdown(mq))
+  {
+    // // make new request
+    // //*r = request_create( , , NULL);
+    //
+    // // connect to server
+    // fs = socket_connect(mq->host, mq->port);
+    //
+    // // write request
+    // request_write(r, fs);
+    //
+    // // read response
+    // if (!strstr(fgets(fs), "200 OK"))
+    // {
+    //   break; // bad request and whastever, handle this better
+    // }
+    //
+    // // check if there is a body
+    // while (fgets(*fs) && !streq(buf, "\r\n"))
+    // {
+    //   sscanf(buf, "Content-Length: %lu", &length);
+    // }
+    // r->body = malloc((length + 1) * sizeof(char));
+    // //fread(r->body, length, fs);
+  }
+
+
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
