@@ -11,8 +11,8 @@
 
 /* Internal Prototypes */
 
-void * mq_pusher(void *);
-void * mq_puller(void *);
+void *mq_pusher(void *);
+void *mq_puller(void *);
 
 /* External Functions */
 
@@ -23,15 +23,44 @@ void * mq_puller(void *);
  * @param   port        Port of server.
  * @return  Newly allocated Message Queue structure.
  */
-MessageQueue * mq_create(const char *name, const char *host, const char *port) {
-    return NULL;
+MessageQueue *mq_create(const char *name, const char *host, const char *port)
+{
+    MessageQueue *mq = calloc(1, sizeof(MessageQueue));
+
+    if (mq)
+    {
+        if (name)
+        {
+            strcpy(mq->name, name);
+        }
+        if (host)
+        {
+            strcpy(mq->host, host);
+        }
+        if (port)
+        {
+            strcpy(mq->port, port);
+        }
+
+        mq->outgoing = queue_create();
+        mq->incoming = queue_create();
+    }
+
+    return mq;
 }
 
 /**
  * Delete Message Queue structure (and internal resources).
  * @param   mq      Message Queue structure.
  */
-void mq_delete(MessageQueue *mq) {
+void mq_delete(MessageQueue *mq)
+{
+    if (mq)
+    {
+        queue_delete(mq->incoming);
+        queue_delete(mq->outgoing);
+        free(mq);
+    }
 }
 
 /**
@@ -40,7 +69,8 @@ void mq_delete(MessageQueue *mq) {
  * @param   topic   Topic to publish to.
  * @param   body    Message body to publish.
  */
-void mq_publish(MessageQueue *mq, const char *topic, const char *body) {
+void mq_publish(MessageQueue *mq, const char *topic, const char *body)
+{
 }
 
 /**
@@ -48,7 +78,8 @@ void mq_publish(MessageQueue *mq, const char *topic, const char *body) {
  * @param   mq      Message Queue structure.
  * @return  Newly allocated message body (must be freed).
  */
-char * mq_retrieve(MessageQueue *mq) {
+char *mq_retrieve(MessageQueue *mq)
+{
     return NULL;
 }
 
@@ -57,7 +88,8 @@ char * mq_retrieve(MessageQueue *mq) {
  * @param   mq      Message Queue structure.
  * @param   topic   Topic string to subscribe to.
  **/
-void mq_subscribe(MessageQueue *mq, const char *topic) {
+void mq_subscribe(MessageQueue *mq, const char *topic)
+{
 }
 
 /**
@@ -65,7 +97,8 @@ void mq_subscribe(MessageQueue *mq, const char *topic) {
  * @param   mq      Message Queue structure.
  * @param   topic   Topic string to unsubscribe from.
  **/
-void mq_unsubscribe(MessageQueue *mq, const char *topic) {
+void mq_unsubscribe(MessageQueue *mq, const char *topic)
+{
 }
 
 /**
@@ -74,7 +107,8 @@ void mq_unsubscribe(MessageQueue *mq, const char *topic) {
  *  2. Second thread should continuously receive reqeusts to incoming queue.
  * @param   mq      Message Queue structure.
  */
-void mq_start(MessageQueue *mq) {
+void mq_start(MessageQueue *mq)
+{
 }
 
 /**
@@ -82,14 +116,16 @@ void mq_start(MessageQueue *mq) {
  * sentinel messages
  * @param   mq      Message Queue structure.
  */
-void mq_stop(MessageQueue *mq) {
+void mq_stop(MessageQueue *mq)
+{
 }
 
 /**
  * Returns whether or not the message queue should be shutdown.
  * @param   mq      Message Queue structure.
  */
-bool mq_shutdown(MessageQueue *mq) {
+bool mq_shutdown(MessageQueue *mq)
+{
     return false;
 }
 
@@ -99,7 +135,8 @@ bool mq_shutdown(MessageQueue *mq) {
  * Pusher thread takes messages from outgoing queue and sends them to server.
  * @param   arg     Message Queue structure.
  **/
-void * mq_pusher(void *arg) {
+void *mq_pusher(void *arg)
+{
     return NULL;
 }
 
@@ -108,7 +145,8 @@ void * mq_pusher(void *arg) {
  * incoming queue.
  * @param   arg     Message Queue structure.
  **/
-void * mq_puller(void *arg) {
+void *mq_puller(void *arg)
+{
     return NULL;
 }
 
