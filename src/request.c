@@ -18,9 +18,18 @@ Request *request_create(const char *method, const char *uri, const char *body)
 
     if (r)
     {
-        r->body = strdup(body);
-        r->uri = strdup(uri);
-        r->method = strdup(method);
+        if (body)
+        {
+            r->body = strdup(body);
+        }
+        if (uri)
+        {
+            r->uri = strdup(uri);
+        }
+        if (method)
+        {
+            r->method = strdup(method);
+        }
     }
 
     return r;
@@ -55,7 +64,7 @@ void request_delete(Request *r)
 void request_write(Request *r, FILE *fs)
 {
     fprintf(fs, "%s %s HTTP/1.0\r\n", r->method, r->uri);
-    fprintf(fs, "Content-Length: %lu", strlen(r->body));
+    fprintf(fs, "Content-Length: %lu\r\n", strlen(r->body));
     fprintf(fs, "\r\n");
     fprintf(fs, "%s", r->body);
 }
