@@ -45,6 +45,8 @@ MessageQueue *mq_create(const char *name, const char *host, const char *port)
 
         mutex_init(&mq->lock, NULL);
 
+        mq->shutdown = false;
+
         mq->outgoing = queue_create();
         mq->incoming = queue_create();
     }

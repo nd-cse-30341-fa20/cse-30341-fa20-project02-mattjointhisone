@@ -20,15 +20,15 @@ Request *request_create(const char *method, const char *uri, const char *body)
     {
         if (body)
         {
-            r->body = strdup(body);
+            r->body = strdup((char *)body);
         }
         if (uri)
         {
-            r->uri = strdup(uri);
+            r->uri = strdup((char *)uri);
         }
         if (method)
         {
-            r->method = strdup(method);
+            r->method = strdup((char *)method);
         }
     }
 
