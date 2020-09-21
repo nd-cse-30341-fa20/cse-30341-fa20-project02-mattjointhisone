@@ -31,9 +31,7 @@ MessageQueue *mq_create(const char *name, const char *host, const char *port)
     if (mq)
     {
         strcpy(mq->name, name);
-
         strcpy(mq->host, host);
-
         strcpy(mq->port, port);
 
         mutex_init(&mq->lock, NULL);
