@@ -194,6 +194,8 @@ void *mq_pusher(void *arg)
             request_delete(r);
         }
     }
+
+    return NULL;
 }
 
 /**
@@ -205,37 +207,50 @@ void *mq_pusher(void *arg)
 void *mq_puller(void *arg)
 {
     MessageQueue *mq = (MessageQueue *)arg;
-    Request *r;
     FILE *fs;
     size_t length;
+    char uri[1050];
 
     char buf[BUFSIZ];
 
     while (!mq_shutdown(mq))
     {
-        // // make new request
-        // //*r = request_create( , , NULL);
-        //
-        // // connect to server
-        // fs = socket_connect(mq->host, mq->port);
-        //
-        // // write request
-        // request_write(r, fs);
-        //
+        // make new request
+        sprintf(uri, "/queue/%s/", mq->name);
+        Request *r = request_create("GET", uri, NULL);
+
+        // connect to server
+        fs = socket_connect(mq->host, mq->port);
+
+        if (fs)
+        {
+            // write request
+            request_write(r, fs);
+        }
+        else
+        {
+            continue;
+        }
+
         // // read response
-        // if (!strstr(fgets(fs), "200 OK"))
-        // {
-        //   break; // bad request and whastever, handle this better
-        // }
-        //
-        // // check if there is a body
-        // while (fgets(*fs) && !streq(buf, "\r\n"))
-        // {
-        //   sscanf(buf, "Content-Length: %lu", &length);
-        // }
-        // r->body = malloc((length + 1) * sizeof(char));
-        // //fread(r->body, length, fs);
+        if (!strstr(fgets(buf, BUFSIZ, fs), "200 OK"))
+        {
+            break; // bad request and whastever, handle this better
+        }
+
+        // check if there is a body
+        while (fgets(buf, BUFSIZ, fs) && !streq(buf, "\r\n"))
+        {
+            sscanf(buf, "Content-Length: %ld", &length);
+        }
+        r->body = malloc((length + 1) * sizeof(char));
+        fread(r->body, length, 1, fs);
+
+        queue_push(mq->incoming, r);
+        request_delete(r);
     }
+
+    return NULL;
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */

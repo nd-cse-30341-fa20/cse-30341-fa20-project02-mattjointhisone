@@ -63,10 +63,18 @@ void request_delete(Request *r)
  */
 void request_write(Request *r, FILE *fs)
 {
-    fprintf(fs, "%s %s HTTP/1.0\r\n", r->method, r->uri);
-    fprintf(fs, "Content-Length: %lu\r\n", strlen(r->body));
-    fprintf(fs, "\r\n");
-    fprintf(fs, "%s", r->body);
+    if (r->body)
+    {
+        fprintf(fs, "%s %s HTTP/1.0\r\n", r->method, r->uri);
+        fprintf(fs, "Content-Length: %ld\r\n", strlen(r->body));
+        fprintf(fs, "\r\n");
+        fprintf(fs, "%s", r->body);
+    }
+    else
+    {
+        fprintf(fs, "%s %s HTTP/1.0\r\n", r->method, r->uri);
+        fprintf(fs, "\r\n");
+    }
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
