@@ -75,16 +75,16 @@ int main(int argc, char *argv[])
     MessageQueue *mq = mq_create(name, host, port);
     assert(mq);
 
-    print("before sub");
+    printf("before sub");
 
     mq_subscribe(mq, TOPIC);
-    print("after sub");
+    printf("after sub");
     mq_unsubscribe(mq, TOPIC);
-    print("after topic");
+    printf("after topic");
     mq_subscribe(mq, TOPIC);
-    print("after sub");
+    printf("after sub");
     mq_start(mq);
-    print("after start");
+    printf("after start");
 
     /* Run and wait for incoming and outgoing threads */
     Thread incoming;
