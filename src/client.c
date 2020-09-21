@@ -139,10 +139,13 @@ void mq_start(MessageQueue *mq)
  */
 void mq_stop(MessageQueue *mq)
 {
+    // we are stopping
     mq->shutdown = true;
-    // publish to the SENTINEL
-    // join threads
 
+    // Send sentinel, puller needs something to pull
+    mq_publish(mq, SENTINEL, NULL);
+
+    // join threads
     size_t status;
 
     thread_join(mq->pusher, (void **)&status);
@@ -178,14 +181,16 @@ void *mq_pusher(void *arg)
 
     while (!mq_shutdown(mq))
     {
-        r = queue_pop(mq->outgoing);
+
         fs = socket_connect(mq->host, mq->port);
+
         if (!fs)
         {
             continue;
         }
         else
         {
+            r = queue_pop(mq->outgoing);
             request_write(r, fs);
             // READ RESPONSE UNTIL EOF
             while (fgets(buf, BUFSIZ, fs))
@@ -237,7 +242,7 @@ void *mq_puller(void *arg)
         // // read response
         if (!strstr(fgets(buf, BUFSIZ, fs), "200 OK"))
         {
-            break; // bad request and whastever, handle this better
+            continue; // bad request and whastever, handle this better
         }
 
         // check if there is a body
