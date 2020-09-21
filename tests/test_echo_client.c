@@ -53,10 +53,13 @@ void *outgoing_thread(void *arg)
 
 int main(int argc, char *argv[])
 {
+    printf("started");
     /* Parse command-line arguments */
     char *name = getenv("USER");
     char *host = "localhost";
-    char *port = "9620";
+    char *port = "9625";
+
+    printf("parsed command line");
 
     if (argc > 1)
     {
@@ -70,6 +73,9 @@ int main(int argc, char *argv[])
     {
         name = "echo_client_test";
     }
+
+    printf("before mq_create");
+    sleep(10);
 
     /* Create and start message queue */
     MessageQueue *mq = mq_create(name, host, port);

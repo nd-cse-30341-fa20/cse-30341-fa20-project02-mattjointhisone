@@ -28,20 +28,15 @@ MessageQueue *mq_create(const char *name, const char *host, const char *port)
 {
     MessageQueue *mq = calloc(1, sizeof(MessageQueue));
 
+    printf("created message queue");
+
     if (mq)
     {
-        if (name)
-        {
-            strcpy(mq->name, name);
-        }
-        if (host)
-        {
-            strcpy(mq->host, host);
-        }
-        if (port)
-        {
-            strcpy(mq->port, port);
-        }
+        strcpy(mq->name, name);
+
+        strcpy(mq->host, host);
+
+        strcpy(mq->port, port);
 
         mutex_init(&mq->lock, NULL);
 
@@ -76,7 +71,9 @@ void mq_delete(MessageQueue *mq)
  */
 void mq_publish(MessageQueue *mq, const char *topic, const char *body)
 {
-    Request *r = request_create("PUT", topic, body);
+    char uri[BUFSIZ];
+    sprintf(uri, "/topic/%s", topic);
+    Request *r = request_create("PUT", uri, body);
     queue_push(mq->outgoing, r);
 }
 
@@ -87,8 +84,20 @@ void mq_publish(MessageQueue *mq, const char *topic, const char *body)
  */
 char *mq_retrieve(MessageQueue *mq)
 {
+
     Request *r = queue_pop(mq->incoming);
-    return r->body;
+
+    if (r->body != NULL && !streq(r->body, SENTINEL))
+    {
+        char *body = strdup(r->body);
+        request_delete(r);
+        return body;
+    }
+    else
+    {
+        request_delete(r);
+        return NULL;
+    }
 }
 
 /**
@@ -98,7 +107,7 @@ char *mq_retrieve(MessageQueue *mq)
  **/
 void mq_subscribe(MessageQueue *mq, const char *topic)
 {
-    char uri[1050];
+    char uri[BUFSIZ];
     sprintf(uri, "/subscription/%s/%s", mq->name, topic);
 
     queue_push(mq->outgoing, request_create("PUT", uri, NULL));
@@ -111,7 +120,7 @@ void mq_subscribe(MessageQueue *mq, const char *topic)
  **/
 void mq_unsubscribe(MessageQueue *mq, const char *topic)
 {
-    char uri[1050];
+    char uri[BUFSIZ];
     sprintf(uri, "/subscription/%s/%s", mq->name, topic);
 
     queue_push(mq->outgoing, request_create("DELETE", uri, NULL));
@@ -125,11 +134,10 @@ void mq_unsubscribe(MessageQueue *mq, const char *topic)
  */
 void mq_start(MessageQueue *mq)
 {
-    // BUI said do this, idk if it should be here
-    mq_subscribe(mq, SENTINEL);
-
     thread_create(&mq->pusher, NULL, mq_pusher, mq);
     thread_create(&mq->puller, NULL, mq_puller, mq);
+
+    mq_subscribe(mq, SENTINEL);
 }
 
 /**
@@ -139,17 +147,15 @@ void mq_start(MessageQueue *mq)
  */
 void mq_stop(MessageQueue *mq)
 {
-    // we are stopping
-    mq->shutdown = true;
-
     // Send sentinel, puller needs something to pull
-    mq_publish(mq, SENTINEL, NULL);
+    mq_publish(mq, SENTINEL, SENTINEL);
 
-    // join threads
-    size_t status;
+    mutex_lock(&mq->lock);
+    mq->shutdown = true;
+    mutex_unlock(&mq->lock);
 
-    thread_join(mq->pusher, (void **)&status);
-    thread_join(mq->puller, (void **)&status);
+    thread_join(mq->pusher, NULL);
+    thread_join(mq->puller, NULL);
 }
 
 /**
@@ -199,6 +205,7 @@ void *mq_pusher(void *arg)
             }
 
             request_delete(r);
+            fclose(fs);
         }
     }
 
@@ -215,14 +222,11 @@ void *mq_puller(void *arg)
 {
     MessageQueue *mq = (MessageQueue *)arg;
     FILE *fs;
-    size_t length;
-    char uri[1050];
-
-    char buf[BUFSIZ];
 
     while (!mq_shutdown(mq))
     {
         // make new request
+        char uri[BUFSIZ];
         sprintf(uri, "/queue/%s/", mq->name);
         Request *r = request_create("GET", uri, NULL);
 
@@ -233,28 +237,46 @@ void *mq_puller(void *arg)
         {
             // write request
             request_write(r, fs);
+            char buf[BUFSIZ];
+
+            // // read response
+            if (fgets(buf, BUFSIZ, fs) && strstr(fgets(buf, BUFSIZ, fs), "200 OK"))
+            {
+                size_t length = 0;
+                while (fgets(buf, BUFSIZ, fs) && !streq(buf, "\r\n"))
+                {
+                    sscanf(buf, "Content-Length: %ld", &length);
+                }
+
+                if (length > 0)
+                {
+                    r->body = malloc((length + 1) * sizeof(char));
+                    fread(r->body, length, 1, fs);
+                }
+
+                if (r->body)
+                {
+                    queue_push(mq->incoming, r);
+                }
+                else
+                {
+                    request_delete(r);
+                }
+            }
+            else
+            {
+                request_delete(r);
+                while (fgets(buf, BUFSIZ, fs))
+                {
+                    continue;
+                }
+            }
+            fclose(fs);
         }
         else
         {
-            continue;
+            request_delete(r);
         }
-
-        // // read response
-        if (!strstr(fgets(buf, BUFSIZ, fs), "200 OK"))
-        {
-            continue; // bad request and whastever, handle this better
-        }
-
-        // check if there is a body
-        while (fgets(buf, BUFSIZ, fs) && !streq(buf, "\r\n"))
-        {
-            sscanf(buf, "Content-Length: %ld", &length);
-        }
-        r->body = malloc((length + 1) * sizeof(char));
-        fread(r->body, length, 1, fs);
-
-        queue_push(mq->incoming, r);
-        request_delete(r);
     }
 
     return NULL;
