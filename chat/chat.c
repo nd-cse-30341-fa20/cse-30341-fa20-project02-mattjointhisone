@@ -10,12 +10,16 @@
 
 /* Prototypes */
 void *listen_for_request (void *);
-void usage();
+
+void usage()
+{
+  printf("\nUSAGE\n");
+  printf("Use commands sub, unsub, and message to interact with server");
+}
 
 int main()
 {
   char  *NAME = getenv("USER");
-  char  *TOPIC = "topic";
   char  *HOST = "localhost";
   char  *PORT = "9620";      // server port
   Thread lis;
@@ -29,23 +33,47 @@ int main()
 
   while (!feof(stdin))
   {
-      char command[BUFSIZ] = "";
-      char argument[BUFSIZ] = "";
+      char command[BUFSIZ];
+      char option[BUFSIZ];
+      char argument[BUFSIZ];
+      char body[BUFSIZ];
 
       printf("\nMQ:: ");
 
       while (!fgets(command, BUFSIZ, stdin) && !feof(stdin));
+      chomp(command);
 
-      if (streq(command, "help"))
+      sscanf(command, "%s %s", option, argument);
+
+
+      if (streq(option, "help"))
       {
-
+        usage();
+      }
+      else if (streq(option, "subscribe"))
+      {
+        mq_subscribe(mq, argument);
+      }
+      else if (streq(option, "unsubscribe"))
+      {
+        mq_unsubscribe(mq, argument);
+      }
+      else if (streq(option, "exit"))
+      {
+        break;
+      }
+      // try to break up body
+      sscanf(command, "%s %s %[^\t\n]", option, argument, body);
+      if (streq(option, "message"))
+      {
+        mq_publish(mq, argument, body);
       }
   }
 
+  mq_stop(mq);
   mq_delete(mq);
   return EXIT_SUCCESS;
 }
-
 
 void *listen_for_request (void *arg)
 {
@@ -55,7 +83,8 @@ void *listen_for_request (void *arg)
   {
     body = mq_retrieve(mq);    // this blocks for us so we dont spin
     printf("%s", body);
-    // fflush(STDIN);
+    free(body);
+    fflush(stdout);
   }
   return NULL;
 }

@@ -6,6 +6,7 @@
 #include <string.h>
 
 #define streq(a, b)	(strcmp((a), (b)) == 0)
+#define chomp(s)    if (strlen(s)) { s[strlen(s) - 1] = 0; }
 
 #endif
 
