@@ -28,8 +28,6 @@ MessageQueue *mq_create(const char *name, const char *host, const char *port)
 {
     MessageQueue *mq = calloc(1, sizeof(MessageQueue));
 
-    printf("created message queue");
-
     if (mq)
     {
         strcpy(mq->name, name);
@@ -227,7 +225,7 @@ void *mq_puller(void *arg)
     {
         // make new request
         char uri[BUFSIZ];
-        sprintf(uri, "/queue/%s/", mq->name);
+        sprintf(uri, "/queue/%s", mq->name);
         Request *r = request_create("GET", uri, NULL);
 
         // connect to server
@@ -240,7 +238,7 @@ void *mq_puller(void *arg)
             char buf[BUFSIZ];
 
             // // read response
-            if (fgets(buf, BUFSIZ, fs) && strstr(fgets(buf, BUFSIZ, fs), "200 OK"))
+            if (fgets(buf, BUFSIZ, fs) && strstr(buf, "200 OK"))
             {
                 size_t length = 0;
                 while (fgets(buf, BUFSIZ, fs) && !streq(buf, "\r\n"))
@@ -250,7 +248,7 @@ void *mq_puller(void *arg)
 
                 if (length > 0)
                 {
-                    r->body = malloc((length + 1) * sizeof(char));
+                    r->body = calloc((length + 1), sizeof(char));
                     fread(r->body, length, 1, fs);
                 }
 
