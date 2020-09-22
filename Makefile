@@ -18,6 +18,8 @@ TEST_SOURCES    = $(wildcard tests/test_*.c)
 TEST_OBJECTS    = $(TEST_SOURCES:.c=.o)
 TEST_PROGRAMS   = $(subst tests,bin,$(basename $(TEST_OBJECTS)))
 
+APPLICATION 		= tests/chat.c
+
 # Rules
 
 all:	$(CLIENT_LIBRARY)
@@ -37,6 +39,11 @@ bin/%:  		tests/%.o $(CLIENT_LIBRARY)
 test:			$(TEST_PROGRAMS)
 	@$(MAKE) -sk test-all
 
+app: 				$(APPLICATION) $(CLIENT_LIBRARY)
+	  @echo "Compiling application"
+		@$(LD) $(LDFLAGS) -o $@ $^
+
+
 test-all:   		test-request-unit test-queue-unit test-queue-functional test-echo-client
 
 test-request-unit:	bin/test_request_unit
@@ -44,10 +51,10 @@ test-request-unit:	bin/test_request_unit
 
 test-queue-unit:	bin/test_queue_unit
 	@bin/test_queue_unit.sh
-	
+
 test-queue-functional:	bin/test_queue_functional
 	@bin/test_queue_functional.sh
-	
+
 test-echo-client:	bin/test_echo_client
 	@bin/test_echo_client.sh
 
@@ -57,7 +64,7 @@ clean:
 
 	@echo "Removing  libraries"
 	@rm -f $(CLIENT_LIBRARY)
-	
+
 	@echo "Removing  test programs"
 	@rm -f $(TEST_PROGRAMS)
 
