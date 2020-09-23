@@ -33,9 +33,11 @@ int main()
   while (!feof(stdin))
   {
     char command[BUFSIZ];
+
     char option[BUFSIZ];
     char argument[BUFSIZ];
     char body[BUFSIZ];
+    char *token;
 
     printf("\nMQ:: ");
 
@@ -43,7 +45,8 @@ int main()
       ;
     chomp(command);
 
-    sscanf(command, "%s %s", option, argument);
+    token = strtok(command, " ");
+    strcpy(option, token);
 
     if (streq(option, "help"))
     {
@@ -51,20 +54,28 @@ int main()
     }
     else if (streq(option, "subscribe"))
     {
+      token = strtok(NULL, " ");
+      strcpy(argument, token);
       mq_subscribe(mq, argument);
     }
     else if (streq(option, "unsubscribe"))
     {
+      token = strtok(NULL, " ");
+      strcpy(argument, token);
       mq_unsubscribe(mq, argument);
     }
     else if (streq(option, "exit"))
     {
       break;
     }
-    // try to break up body
-    sscanf(command, "%s %s %[^\t\n]", option, argument, body);
-    if (streq(option, "message"))
+    else if (streq(option, "message"))
     {
+      token = strtok(NULL, " ");
+      strcpy(argument, token);
+
+      token = strtok(NULL, " ");
+      strcpy(body, token);
+
       mq_publish(mq, argument, body);
     }
   }
@@ -81,7 +92,10 @@ void *listen_for_request(void *arg)
   while (true)
   {
     body = mq_retrieve(mq); // this blocks for us so we dont spin
-    printf("%s", body);
+    if (!body)
+      break;
+    printf("\nMessage recived: %s\n", body);
+    printf("\nMQ:: ");
     free(body);
     fflush(stdout);
   }
