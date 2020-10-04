@@ -20,7 +20,7 @@ TEST_PROGRAMS   = $(subst tests,bin,$(basename $(TEST_OBJECTS)))
 
 # Rules
 
-all:	$(CLIENT_LIBRARY)
+all:	$(CLIENT_LIBRARY) chat
 
 %.o:			%.c $(CLIENT_HEADERS)
 	@echo "Compiling $@"
@@ -44,20 +44,26 @@ test-request-unit:	bin/test_request_unit
 
 test-queue-unit:	bin/test_queue_unit
 	@bin/test_queue_unit.sh
-	
+
 test-queue-functional:	bin/test_queue_functional
 	@bin/test_queue_functional.sh
-	
+
 test-echo-client:	bin/test_echo_client
 	@bin/test_echo_client.sh
 
+chat: 			bin/chat
+
+bin/chat: 		chat/chat.o $(CLIENT_LIBRARY)
+	@echo "Linking     $@"
+	@$(LD) $(LDFLAGS) -o $@ $^
+
 clean:
 	@echo "Removing  objects"
-	@rm -f $(CLIENT_OBJECTS) $(TEST_OBJECTS)
+	@rm -f $(CLIENT_OBJECTS) $(TEST_OBJECTS) chat/chat.o bin/chat
 
 	@echo "Removing  libraries"
 	@rm -f $(CLIENT_LIBRARY)
-	
+
 	@echo "Removing  test programs"
 	@rm -f $(TEST_PROGRAMS)
 
